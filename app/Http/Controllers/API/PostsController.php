@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class PostsController extends Controller
 {
@@ -32,6 +33,18 @@ class PostsController extends Controller
      */
     public function store(Request $request)
     {
+        // VALIDATE DATA
+        $validator = Validator::make($request->all(), [
+            'post_title' => 'required|max:255',
+            'post_content' => 'required',
+            'post_photo' => 'nullable|image'
+        ]);
+
+        if ($validator->fails())
+        {
+            return response()->json(['error' => 'Bad request'], 400);
+        }
+
         $post = Post::create($request->all());
         $post->user_id = $request->user()->id;
         $photo_url = $request->file('post_photo')->store('public');
@@ -68,6 +81,17 @@ class PostsController extends Controller
      */
     public function update(Request $request, Post $post)
     {
+        // VALIDATE DATA
+        $validator = Validator::make($request->all(), [
+            'post_title' => 'required|max:255',
+            'post_content' => 'required'            
+        ]);
+
+        if ($validator->fails())
+        {
+            return response()->json(['error' => 'Bad request'], 400);
+        }
+
         if ($request->user()->id == $post->user_id)
         {
             $post->update($request->all());
@@ -87,7 +111,10 @@ class PostsController extends Controller
      */
     public function destroy(Post $post)
     {
-        Storage::delete($post->photo_url);
+        if ($post->photo_url != null)
+        {
+            Storage::delete($post->photo_url);
+        }        
         $post->delete();
         return response()->json(null, 204);
     }

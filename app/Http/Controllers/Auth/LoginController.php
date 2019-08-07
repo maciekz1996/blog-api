@@ -40,16 +40,46 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
+    public function login(Request $request)
+    {
+        $this->validateLogin($request);
+
+        // If the class is using the ThrottlesLogins trait, we can automatically throttle
+        // the login attempts for this application. We'll key this by the username and
+        // the IP address of the client making these requests into this application.
+        if (method_exists($this, 'hasTooManyLoginAttempts') &&
+            $this->hasTooManyLoginAttempts($request)) {
+            $this->fireLockoutEvent($request);
+
+            return $this->sendLockoutResponse($request);
+        }
+
+        if ($this->attemptLogin($request)) {
+            $user = $this->guard()->user();
+            $user->api_token = Str::random(60);
+            $user->save();
+            
+            return response()->json(['data' => $user], 200);            
+        }
+
+        // If the login attempt was unsuccessful we will increment the number of attempts
+        // to login and redirect the user back to the login form. Of course, when this
+        // user surpasses their maximum number of attempts they will get locked out.
+        $this->incrementLoginAttempts($request);
+
+        return response()->json(['error' => 'error during login']);
+    }
+
     /**
      * Add api_token after authentication
      */
-    protected function authenticated(Request $request, $user)
-    {
-        $user->api_token = Str::random(60);
-        $user->save();
+    // protected function authenticated(Request $request, $user)
+    // {
+    //     $user->api_token = Str::random(60);
+    //     $user->save();
 
-        return response()->json(['data' => $user->toArray()]);
-    }
+    //     return response()->json(['data' => $user->toArray()]);
+    // }
 
     /**
      * Override default logout

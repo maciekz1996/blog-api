@@ -6,6 +6,7 @@ use App\Post;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PostsController extends Controller
 {
@@ -33,6 +34,8 @@ class PostsController extends Controller
     {
         $post = Post::create($request->all());
         $post->user_id = $request->user()->id;
+        $photo_url = $request->file('post_photo')->store('public');
+        $post->photo_url = $photo_url;
         $post->save();
 
         return response()->json($post, 201);
@@ -84,6 +87,7 @@ class PostsController extends Controller
      */
     public function destroy(Post $post)
     {
+        Storage::delete($post->photo_url);
         $post->delete();
         return response()->json(null, 204);
     }

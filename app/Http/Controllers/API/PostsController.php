@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Post;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class PostsController extends Controller
 {
@@ -31,6 +32,9 @@ class PostsController extends Controller
     public function store(Request $request)
     {
         $post = Post::create($request->all());
+        $post->user_id = $request->user()->id;
+        $post->save();
+
         return response()->json($post, 201);
     }
 
@@ -42,7 +46,14 @@ class PostsController extends Controller
      */
     public function show(Post $post)
     {
-        return $post;
+        if (Auth::guard('api')->user()->id == $post->user_id)
+        {
+            return $post;
+        }        
+        else 
+        {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
     }
 
     /**
@@ -54,8 +65,15 @@ class PostsController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        $post->update($request->all());
-        return response()->json($post, 200);
+        if ($request->user()->id == $post->user_id)
+        {
+            $post->update($request->all());
+            return response()->json($post, 200);
+        }        
+        else 
+        {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
     }
 
     /**

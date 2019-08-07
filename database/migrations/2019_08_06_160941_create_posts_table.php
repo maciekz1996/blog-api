@@ -17,8 +17,12 @@ class CreatePostsTable extends Migration
             $table->bigIncrements('id');
             $table->string('post_title')->max(255);
             $table->text('post_content');
-            $table->integer('user_id')->default(1);
+            $table->bigInteger('user_id')->unsigned()->nullable();
             $table->timestamps();
+        });
+
+        Schema::table('posts', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
